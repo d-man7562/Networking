@@ -1,9 +1,22 @@
 import socket
 import os
 import threading
+import sys
 
 HOST = '0.0.0.0'
-PORT = 8000
+if len(sys.argv) < 3:
+    print("Usage: python httpserver.py <PORT> <DIRECTORY>")
+    sys.exit(1)
+
+PORT = int(sys.argv[1])
+BASE_DIR = sys.argv[2]
+
+if not os.path.isdir(BASE_DIR):
+    print(f"Error: Directory '{BASE_DIR}' does not exist.")
+    sys.exit(1)
+
+print(f"Serving files from: {os.path.abspath(BASE_DIR)}")
+
 
 MIME_TYPES = {
     '.html': 'text/html',
@@ -23,8 +36,10 @@ def serve_file(path):
     
     if path == '/':
         path = '/index.html'
+    file_path = os.path.join(BASE_DIR, path.lstrip('/'))
+
     try:
-        with open(path.lstrip('/'), 'rb') as f:
+        with open(file_path, 'rb') as f:
             content = f.read()
             content_type = get_content_type(path)
             response = (
@@ -59,7 +74,6 @@ def handle_client(conn, addr):
         conn.sendall(response)
     finally:
         conn.close()
-
 # Set up socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
